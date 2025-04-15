@@ -107,6 +107,7 @@ __device__ float inline spiece_wise_integrated(float x, const float a, const flo
     {
         return coeff * (b - x) * (b - x) / (a - b) + 1.0f;
     }
+    return 0.0f;
 }
 
 __device__ inline float2 SideIntersectVec(float2 a1, float2 d1, float2 b1, float2 d2)

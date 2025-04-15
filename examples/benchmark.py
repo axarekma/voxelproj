@@ -1,4 +1,4 @@
-import voxelproj
+from context import voxelproj
 import numpy as np
 import time
 import cupy
@@ -128,7 +128,10 @@ print(f"Maximum threads per block: {max_dims['max_threads_per_block']}")
 if __name__ == "__main__":
     run_func_A0(voxelproj.forward_z0, pretransfer=True)
     run_func_A2(voxelproj.forward_z2, pretransfer=True)
-    run_func_AT0(voxelproj.backward_z0, pretransfer=True)
-    run_func_AT2(voxelproj.backward_z2, pretransfer=True)
+    # run_func_AT0(voxelproj.backward_z0, pretransfer=True)
+    # run_func_AT2(voxelproj.backward_z2, pretransfer=True)
 
     print("DONE")
+
+    run_func_A0(voxelproj.forward_z0_dp, pretransfer=True)
+    run_func_A2(voxelproj.forward_z2_dp, pretransfer=True)

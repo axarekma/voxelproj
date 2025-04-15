@@ -2,6 +2,11 @@ import numpy as np
 
 
 def print_adjoint_info(x, y, Ax, ATy):
+    x = x.astype("float64")
+    y = x.astype("float64")
+    Ax = x.astype("float64")
+    ATy = x.astype("float64")
+
     lhs = np.vdot(Ax, y)
     rhs = np.vdot(x, ATy)
 
