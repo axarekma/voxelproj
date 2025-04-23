@@ -4,19 +4,19 @@ Exact trapezoid projection operators for parallel geometry.
 
 ## Motivation
 
-As usual as for many problems, also CT projection operators are limited that you usually can only choose two of the desireable qualities in the set {general, fast , accurate}. The CT libraries online tends to lean towards the first two.
+As is often the case in numerical problems, CT projection operators usually force you to pick two out of three desirable properties from the set {general, fast, accurate}. Most libraries lean toward the first two.
 
-By limiting this library to the latter two, we present here projection operators that work in exactly one case: perellel projection with equal voxel tro pixel dimensions.
+By limiting this library to the latter two, we present projection operators that work in exactly one case: parallel projection with equal voxel-to-pixel dimensions.
 
-With this heavy limitation. We get approximately the same speed as more genral ones, but with exact (to single prtecision) operators.
+With this heavy restriction, we achieve approximately the same speed as more general libraries, but with exact (to single precision) projection operators.
 
-Here is a comparison of voxel weights as a function of projection angle for all vozels in a 9\*10 pixel grid. For comparison I present also the same for Tomosipo [^1] that uses ASTRA as a backend and LEAP [^2].
+Here’s a comparison of voxel weights as a function of projection angle for all voxels in a 9×10 pixel grid. For comparison I present also the same for Tomosipo [^1] that uses ASTRA as a backend and LEAP [^2].
 
-![Woxel weights](Examples/Voxel_weight.png)
+![Voxel weights](Examples/Voxel_weight.png)
 
 ## Build Instructions
 
-```bash
+```
 pip install .
 ```
 
@@ -27,22 +27,23 @@ import torch
 import voxelproj
 import numpy as np
 
-# ARRAY SHAPES FOR THE 2 ORDERS
+# ARRAY SHAPES FOR THE TWO ORDERS
+SX, SY, H = 512, 512, 512
+n_angles = 192
+order = 0
 x_shape = {0: (SY, SX, H), 2: (H, SY, SX)}
 y_shape = {0: (n_angles, PX, H), 2: (H, n_angles, PX)}
 
 # SETUP DATA
-SX, SY, H = 512, 512, 512
-n_angles = 192
 angles = np.linspace(0, np.pi, n_angles).astype(np.float32)
 x = torch.randn(x_shape[0], device="cuda")
 y_inp = torch.zeros(y_shape[0], device="cuda")
 
-# PREJECTION
+# PROJECTION
 # Any of these
 y = voxelproj.forward(x, angles, y=None) #default output shape
 y = voxelproj.forward(x, angles, y=y_shape[0]) #defined output shape
-y_out = voxelproj.forward(x, angles, y=y_inp) #inplace
+y_out = voxelproj.forward(x, angles, y=y_inp, z_order = order) #in-place
 assert id(y_out) == id(y_inp)
 ```
 
@@ -63,8 +64,8 @@ Long story short, ASTRA is really fast.
 
 ### TODO
 
-- Data chunking for larger datasets (Right now, due to using shared memory for the precalculated trigonometric parameters n_angles is limited by MAX_ANGLES=512)
-- Translations (x-Translation shouldn't really have computational overhead, y-translation can be done via TEX interpolation.)
+- Data chunking for larger datasets. (Currently, due to using shared memory for precomputed trigonometric parameters, n_angles is limited by MAX_ANGLES=512.)
+- Translations: x-translation should have no computational overhead; y-translation could be handled via texture interpolation.
 
 [^1]: [Tomosipo](https://github.com/ahendriksen/tomosipo)
 [^2]: [LEAP](https://github.com/LLNL/leap)
