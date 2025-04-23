@@ -1,75 +1,54 @@
 from setuptools import setup, find_packages
-from setuptools.command.build_ext import build_ext
-import subprocess
+from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 import os
+import glob
 import platform
-import shutil
+
+library_name = "voxelproj"
+__version__ = "0.0.1"
 
 
-class CUDABuild(build_ext):
-    def run(self):
-        # Compile CUDA kernels
-        cuda_files = [
-            "sp_forward_z0.cu",
-            "sp_forward_z2.cu",
-            "sp_backward_z0.cu",
-            "sp_backward_z2.cu",
-        ]  # List your .cu files here
+def get_extensions():
+    this_dir = os.path.dirname(os.path.curdir)
+    extensions_dir = os.path.join(this_dir, library_name, "csrc")
+    sources = list(glob.glob(os.path.join(extensions_dir, "*.cpp")))
+    cuda_sources = list(glob.glob(os.path.join(extensions_dir, "*.cu")))
 
-        common_flags = [
-            "nvcc",
-            "-arch=native",
-            "-O3",  # Maximum optimization level
-            "--use_fast_math",  # Fast math operations
-            "--cubin",
-        ]
+    is_windows = platform.system() == "Windows"
+    extra_link_args = []
+    extra_compile_args = {
+        "cxx": [
+            "/O2" if is_windows else "-O3",
+        ],
+        "nvcc": [
+            "-O3",
+            # "-DTORCH_USE_CUDA_DSA",
+            "--use_fast_math",
+            # "-allow-unsupported-compiler",                 # These were needed to get it to work on my laptop
+            # "-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",  # With older cuda support
+            # "-lineinfo",        # Include line information for profiler
+            # "-src-in-ptx",      # Embed source in PTX for better profiling
+            # "-g",               # Include debug information
+        ],
+    }
 
-        is_windows = platform.system() == "Windows"
+    ext_proj = CUDAExtension(
+        f"{library_name}._CU",
+        sources + cuda_sources,
+        extra_compile_args=extra_compile_args,
+    )
 
-        if is_windows:
-            # Windows-specific compiler flags
-            platform_flags = [
-                "-Xcompiler=/O2",  # Host compiler optimization for speed
-                "-Xcompiler=/MD",  # Multi-threaded DLL runtime
-                "-Xcompiler=/Zi",  # Debug information
-            ]
-        else:
-            # Linux/Unix-specific compiler flags
-            platform_flags = [
-                "-Xcompiler=-O3",  # Host compiler optimization
-                "-Xcompiler=-fPIC",  # Position-independent code
-                "-Xcompiler=-Wall",  # Enable warnings
-                "--compiler-options=-ffast-math",  # Fast math for host code
-            ]
-
-        for cuda_file in cuda_files:
-            output_file = os.path.splitext(cuda_file)[0] + ".cubin"
-            input_path = os.path.join("voxelproj", "cuda", cuda_file)
-            output_path = os.path.join("voxelproj", "cuda", output_file)
-            print(f"Compiling {cuda_file} to {output_file}...")
-            file_args = [input_path, "-o", output_path]
-
-            subprocess.check_call(common_flags + platform_flags + file_args)
-        build_ext.run(self)
+    return [ext_proj]
 
 
 setup(
-    name="voxelproj",
-    version="0.1",
-    packages=find_packages(),
-    package_data={
-        "voxelproj": ["cuda/*.ptx"],  # Include compiled PTX files
-    },
-    cmdclass={
-        "build_ext": CUDABuild,
-    },
-    install_requires=[
-        "numpy",
-        "pycuda",
-    ],
-    python_requires=">=3.6",
+    name=library_name,
+    version=__version__,
     author="Axel Ekman",
-    author_email="axel.a.ekman@gmail.com",
-    description="Exact parallel projections with separabel footprints.",
-    keywords="tomgrpahy",
+    author_email="Axel.Ekman@iki.fi",
+    description="Accurate parallel projection",
+    long_description="NA",
+    packages=find_packages(),
+    ext_modules=get_extensions(),
+    cmdclass={"build_ext": BuildExtension},
 )

@@ -87,15 +87,12 @@ __device__ inline double dpiece_wise_integrated(double x, const double a, const 
 __device__ float inline spiece_wise_integrated(float x, const float a, const float b,
                                                const float y_max)
 {
-
-    // Fast path for common cases
-    if (x <= -b)
-        return 0.0f;
-    if (x >= b)
-        return 1.0f;
-
     float const coeff = 0.5f * y_max;
-    if (x < -a)
+    if (x <= -b)
+    {
+        return 0.0f;
+    }
+    else if (x < -a)
     {
         return coeff * (x + b) * (x + b) / (b - a);
     }
@@ -107,7 +104,65 @@ __device__ float inline spiece_wise_integrated(float x, const float a, const flo
     {
         return coeff * (b - x) * (b - x) / (a - b) + 1.0f;
     }
-    return 0.0f;
+    else
+    {
+        return 1.0f;
+    }
+}
+
+__device__ __forceinline__ float inl_spiece_wise_integrated(const float x, const float a, const float b,
+                                                            const float y_max)
+{
+    float const coeff = 0.5f * y_max;
+    if (x <= -b)
+    {
+        return 0.0f;
+    }
+    else if (x < -a)
+    {
+        return coeff * (x + b) * (x + b) / (b - a);
+    }
+    else if (x < a)
+    {
+        return coeff * (b + a) + y_max * x;
+    }
+    else if (x < b)
+    {
+        return coeff * (b - x) * (b - x) / (a - b) + 1.0f;
+    }
+    else
+    {
+        return 1.0f;
+    }
+}
+
+__device__ __forceinline__ float spiece_wise_integrated_precalc(float x, const float4 pwiargs)
+{
+    float const a = pwiargs.x;
+    float const b = pwiargs.y;
+    float const coeff = pwiargs.z;
+    float const coeffdiv = pwiargs.w;
+
+    if (x <= -b)
+    {
+        return 0.0f;
+    }
+    else if (x < -a)
+    {
+        return coeffdiv * (x + b) * (x + b);
+    }
+    else if (x < a)
+    {
+        return coeff * (b + a) + 2.0f * coeff * x;
+    }
+    else if (x < b)
+    {
+        return 1.0f - coeffdiv * (b - x) * (b - x);
+    }
+    else
+    {
+        return 1.0f;
+    }
 }
 
 __device__ inline float2 SideIntersectVec(float2 a1, float2 d1, float2 b1, float2 d2)
