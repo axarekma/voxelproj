@@ -3,11 +3,11 @@
 #define d_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define d_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#define MAX_ANGLES 256
+#define MAX_ANGLES 512
 
 __global__ void sp_backward_z0(cudaTextureObject_t tex_proj, float *volume, float *angles,
-    int p0, int p1, int p2, int v0, int v1, int v2)
-    {
+                               int p0, int p1, int p2, int v0, int v1, int v2)
+{
     int zi = blockIdx.x * blockDim.x + threadIdx.x;
     int xi = blockIdx.y * blockDim.y + threadIdx.y;
     int yi = blockIdx.z * blockDim.z + threadIdx.z;
@@ -21,21 +21,12 @@ __global__ void sp_backward_z0(cudaTextureObject_t tex_proj, float *volume, floa
     int const px = p1;
     int const pa = p2;
 
-    // if (zi == 0 && xi == 0 && yi == 0)
-    // {
-    //     printf("     === sp_backward_z0 ===\n");
-    //     printf("    Nproj: (Height,Width, Angles) (%d, %d, %d) \n", p0, p1, p2);
-    //     printf("    Nvol: (Height,Sx,Sy) (%d, %d, %d) \n", v0, v1, v2);
-    //     printf("    Angles: first = %f, last = %f \n", angles[0], angles[p2 - 1]);
-    // }
-
     float const xcent = 0.5f * (nx - 1);
     float const ycent = 0.5f * (ny - 1);
     float const pcent = 0.5f * (px - 1);
 
     // Define shared memory for angle calculations
     __shared__ float2 s_cossin[MAX_ANGLES];
-    // __shared__ float3 s_pwi_args[MAX_ANGLES];
     __shared__ float4 s_pwi_args_coeff[MAX_ANGLES];
     // Thread block indices
     int const tx = threadIdx.x;
@@ -56,8 +47,6 @@ __global__ void sp_backward_z0(cudaTextureObject_t tex_proj, float *volume, floa
             float const cms = fabsf(0.5f * (c - s));
             float const cps = fabsf(0.5f * (c + s));
             s_cossin[i] = make_float2(cos(angles[i]), sin(angles[i]));
-            // float cms = fabs(0.5f * (s_cossin[i].x - s_cossin[i].y));
-            // float cps = fabs(0.5f * (s_cossin[i].x + s_cossin[i].y));
 
             float const xmin = d_MIN(cms, cps);
             float const xmax = d_MAX(cms, cps);
@@ -66,7 +55,6 @@ __global__ void sp_backward_z0(cudaTextureObject_t tex_proj, float *volume, floa
             float const coeff = 0.5f * lmax;
             float const coeffdiv = coeff / (xmax - xmin);
 
-            // s_pwi_args[i] = make_float3(xmin, xmax, lmax);
             s_pwi_args_coeff[i] = make_float4(xmin, xmax, coeff, coeffdiv);
         }
     }
@@ -95,10 +83,7 @@ __global__ void sp_backward_z0(cudaTextureObject_t tex_proj, float *volume, floa
 
         float const xp = relx * cosphi + rely * sinphi + pcent;
         int const iqx = __float2int_rn(xp);
-        // int const iqx = static_cast<int>(round(xp));
         float const xv = iqx - xp;
-        // float const val1 = spiecewise_integrated(xv - 0.5f, pwi_args.x, pwi_args.y, pwi_args.z);
-        // float const val2 = spiece_wise_integrated(xv + 0.5f, pwi_args.x, pwi_args.y, pwi_args.z);
         float const val1 = spiece_wise_integrated_precalc(xv - 0.5f, pwi_args_coeff);
         float const val2 = spiece_wise_integrated_precalc(xv + 0.5f, pwi_args_coeff);
         float const wx0 = val1;

@@ -63,12 +63,8 @@ Long story short, ASTRA is really fast.
 
 ### TODO
 
-- Data chunking for larger datasets
-- Translations
-
-## Tests
-
-asdasd
+- Data chunking for larger datasets (Right now, due to using shared memory for the precalculated trigonometric parameters n_angles is limited by MAX_ANGLES=512)
+- Translations (x-Translation shouldn't really have computational overhead, y-translation can be done via TEX interpolation.)
 
 [^1]: [Tomosipo](https://github.com/ahendriksen/tomosipo)
 [^2]: [LEAP](https://github.com/LLNL/leap)
