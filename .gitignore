@@ -162,3 +162,5 @@ cython_debug/
 # Internal testing
 _perf*
 _bench*
+*_dev.py
+dev_*.py
