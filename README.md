@@ -12,7 +12,7 @@ With this heavy restriction, we achieve approximately the same speed as more gen
 
 Here’s a comparison of voxel weights as a function of projection angle for all voxels in a 9×10 pixel grid. For comparison I present also the same for Tomosipo [^1] that uses ASTRA as a backend and LEAP [^2].
 
-![Voxel weights](Examples/Voxel_weight.png)
+![Voxel weights](examples/Voxel_weight.png)
 
 ## Build Instructions
 
